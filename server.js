@@ -2,7 +2,7 @@ const express = require("express");
 const { TwitterApi } = require("twitter-api-v2");
 const dotenv = require("dotenv");
 const fs = require("fs");
-const crypto = require("crypto"); // ✅ Import crypto
+const security = require('./security');
 
 dotenv.config(); // Load environment variables
 
@@ -58,26 +58,26 @@ app.post("/webhook", async (req, res) => {
   res.sendStatus(200);
 });
 
-// ✅ CRC Challenge Response (for Twitter webhook validation)
-app.get("/webhook", (req, res) => {
-  const crc_token = req.query.crc_token;
+// CRC Challenge Response (for Twitter webhook validation)
+app.get('/webhook', function(request, response) {
 
-  if (!crc_token) {
-    return res.status(400).send("CRC token missing");
-  }
+    var crc_token = request.query.crc_token
+  
+    if (crc_token) {
+      var hash = security.get_challenge_response(crc_token, auth.twitter_oauth.consumer_secret)
+  
+      response.status(200);
+      response.send({
+        response_token: 'sha256=' + hash
+      })
+    } else {
+      response.status(400);
+      response.send('Error: crc_token missing from request')
+    }
+  })
 
-  // ✅ Generate SHA-256 HMAC hash using Twitter API Secret
-  const hash = crypto
-    .createHmac("sha256", process.env.TWITTER_API_SECRET)
-    .update(crc_token)
-    .digest("base64");
-
-  res.json({ response_token: `sha256=${hash}` });
-});
-
-// ✅ Test Route to Check Server Status
+// Test Route to Check Server Status
 app.get("/", (req, res) => res.send("H.E.R.B.I.E. is running!"));
 
-// ✅ Start Server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`🚀 App listening on port: ${PORT}`));
