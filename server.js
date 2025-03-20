@@ -3,14 +3,15 @@ const { TwitterApi } = require("twitter-api-v2");
 const dotenv = require("dotenv");
 const fs = require("fs");
 
-dotenv.config();
+dotenv.config(); // Load environment variables
+
 const app = express();
 app.use(express.json());
 
-// ✅ Load responses from JSON file instead of hardcoding them
+//  Load responses from JSON file
 const responses = JSON.parse(fs.readFileSync("responses.json", "utf8"));
 
-// ✅ Twitter API credentials
+// Twitter API Client Setup
 const twitterClient = new TwitterApi({
   appKey: process.env.TWITTER_API_KEY,
   appSecret: process.env.TWITTER_API_SECRET,
@@ -20,40 +21,22 @@ const twitterClient = new TwitterApi({
 
 const rwClient = twitterClient.readWrite;
 
-// ✅ Send DM Function
+// Send DM Function
 async function sendDM(recipientId, messages) {
   try {
-    if (!Array.isArray(messages)) {
-      messages = [messages];
-    }
+    if (!Array.isArray(messages)) messages = [messages];
 
     for (const message of messages) {
       await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
       console.log(`✅ Sent message to ${recipientId}: ${message}`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 sec delay
     }
   } catch (error) {
-    console.error("❌ Error sending DM:", error);
+    console.error(" Error sending DM:", error);
   }
 }
 
-app.get("/webhook", (req, res) => {
-    const crc_token = req.query.crc_token;
-    if (crc_token) {
-      const crypto = require("crypto");
-      const hash = crypto
-        .createHmac("sha256", process.env.TWITTER_API_SECRET)
-        .update(crc_token)
-        .digest("base64");
-  
-      res.json({ response_token: `sha256=${hash}` });
-    } else {
-      res.status(400).send("CRC token missing");
-    }
-  });
-  
-
-// ✅ Webhook to Handle Messages
+// Webhook to Handle Incoming DMs
 app.post("/webhook", async (req, res) => {
   const event = req.body.data;
   if (!event || !event.text || !event.sender_id) return res.sendStatus(400);
@@ -72,11 +55,24 @@ app.post("/webhook", async (req, res) => {
   res.sendStatus(200);
 });
 
-app.get("/", (req, res) => {
-  res.send("H.E.R.B.I.E. is running!");
-});
+// CRC Challenge Response
+app.get("/webhook", (req, res) => {
+    const crc_token = req.query.crc_token;
+  
+    if (!crc_token) {
+      return res.status(400).send("CRC token missing");
+    }
+  
+    // Generate SHA-256 HMAC hash using Twitter API Secret
+    const hash = crypto.createHmac("sha256", process.env.TWITTER_API_SECRET)
+      .update(crc_token)
+      .digest("base64");
+  
+    res.json({ response_token: `sha256=${hash}` });
+  });
+  
+
+app.get("/", (req, res) => res.send("H.E.R.B.I.E. is running!"));
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`App listening on port: ${PORT}`);
-});
+app.listen(PORT, () => console.log(`App listening on port: ${PORT}`));
