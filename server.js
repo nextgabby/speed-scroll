@@ -37,6 +37,22 @@ async function sendDM(recipientId, messages) {
   }
 }
 
+app.get("/webhook", (req, res) => {
+    const crc_token = req.query.crc_token;
+    if (crc_token) {
+      const crypto = require("crypto");
+      const hash = crypto
+        .createHmac("sha256", process.env.TWITTER_API_SECRET)
+        .update(crc_token)
+        .digest("base64");
+  
+      res.json({ response_token: `sha256=${hash}` });
+    } else {
+      res.status(400).send("CRC token missing");
+    }
+  });
+  
+
 // ✅ Webhook to Handle Messages
 app.post("/webhook", async (req, res) => {
   const event = req.body.data;
