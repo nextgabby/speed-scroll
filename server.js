@@ -38,15 +38,15 @@ async function sendDM(recipientId, messages) {
       if (!Array.isArray(messages)) messages = [messages];
   
       for (const message of messages) {
-        const response = await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
-        console.log(`Sent message to ${recipientId}:`, response);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
+        console.log(`✅ Sent message to ${recipientId}: ${message}`);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 sec delay
       }
     } catch (error) {
       console.error("Error sending DM:", error);
-      console.error("Twitter API Response:", JSON.stringify(error.data, null, 2));
     }
   }
+  
   
 
   app.post("/webhook", async (req, res) => {
