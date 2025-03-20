@@ -22,25 +22,34 @@ const twitterClient = new TwitterApi({
 
 const rwClient = twitterClient.readWrite;
 
+
+(async () => {
+    try {
+      const user = await twitterClient.v2.me();
+      console.log("✅ Authenticated as:", user);
+    } catch (error) {
+      console.error("❌ Twitter API Authentication Error:", error);
+    }
+  })();
+  
 // Send DM Function (Ensures Each Message is Sent Individually)
 async function sendDM(recipientId, messages) {
-  try {
-    if (!Array.isArray(messages)) messages = [messages]; // Convert single message to array
-
-    for (const message of messages) {
-      await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
-      console.log(`Sent message to ${recipientId}: ${message}`);
-      
-      // Prevent hitting rate limits by adding a short delay
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
+    try {
+      if (!Array.isArray(messages)) messages = [messages];
+  
+      for (const message of messages) {
+        const response = await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
+        console.log(`✅ Sent message to ${recipientId}:`, response);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 sec delay
+      }
+    } catch (error) {
+      console.error("❌ Error sending DM:", error);
+      console.error("❌ Twitter API Response:", JSON.stringify(error.data, null, 2));
     }
-  } catch (error) {
-    console.error("Error sending DM:", error);
-    console.error("Twitter API Response:", JSON.stringify(error.data, null, 2));
   }
-}
+  
 
-// ✅ Webhook to Handle Incoming DMs
+// Webhook to Handle Incoming DMs
 app.post("/webhook", async (req, res) => {
   try {
     const event = req.body.data;
@@ -69,7 +78,7 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
-// ✅ CRC Challenge Response (for Twitter webhook validation)
+// CRC Challenge Response (for Twitter webhook validation)
 app.get("/webhook", (req, res) => {
   const crc_token = req.query.crc_token;
   
@@ -85,9 +94,9 @@ app.get("/webhook", (req, res) => {
   res.json({ response_token: `sha256=${hash}` });
 });
 
-// ✅ Test Route to Check Server Status
+// Test Route to Check Server Status
 app.get("/", (req, res) => res.send("H.E.R.B.I.E. is running!"));
 
-// ✅ Start Server
+// Start Server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`App listening on port: ${PORT}`));
