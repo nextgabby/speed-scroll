@@ -28,7 +28,7 @@ const rwClient = twitterClient.readWrite;
       const user = await twitterClient.v2.me();
       console.log("✅ Authenticated as:", user);
     } catch (error) {
-      console.error("❌ Twitter API Authentication Error:", error);
+      console.error("Twitter API Authentication Error:", error);
     }
   })();
   
@@ -39,12 +39,12 @@ async function sendDM(recipientId, messages) {
   
       for (const message of messages) {
         const response = await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
-        console.log(`✅ Sent message to ${recipientId}:`, response);
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 sec delay
+        console.log(`Sent message to ${recipientId}:`, response);
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } catch (error) {
-      console.error("❌ Error sending DM:", error);
-      console.error("❌ Twitter API Response:", JSON.stringify(error.data, null, 2));
+      console.error("Error sending DM:", error);
+      console.error("Twitter API Response:", JSON.stringify(error.data, null, 2));
     }
   }
   
