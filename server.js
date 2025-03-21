@@ -23,6 +23,7 @@ const rwClient = twitterClient.readWrite;
 
 // Store bot user ID (prevents responding to itself)
 let botUserId = null;
+const lastMessageByUser = {}; // Store last message ID per user
 
 (async () => {
   try {
@@ -64,9 +65,16 @@ app.post("/webhook", async (req, res) => {
 
     // **Ignore messages from the bot itself**
     if (senderId === botUserId) {
-      console.log("Ignoring bot's own message.");
+      console.log("🛑 Ignoring bot's own message.");
       return res.sendStatus(200);
     }
+
+    // **Prevent duplicate processing (if message already seen)**
+    if (lastMessageByUser[senderId] === messageId) {
+      console.log("🛑 Ignoring duplicate message.");
+      return res.sendStatus(200);
+    }
+    lastMessageByUser[senderId] = messageId; // Store latest message ID for user
 
     // **Determine Response**
     let responseMessages = ["I didn’t understand that. Reply with 1, 2, 3, 4, or 'Flame Off' to end the chat."];
