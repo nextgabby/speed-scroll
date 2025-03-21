@@ -40,22 +40,20 @@ async function sendDM(recipientId, messages) {
     if (!Array.isArray(messages)) messages = [messages];
   
     for (const message of messages) {
-      try {
-        if (
-          typeof message === "object" &&
-          message.type === "media" &&
-          message.media_id
-        ) {
-            await rwClient.v2.post(`dm_conversations/with/${recipientId}/messages`, {
-                text: "Here's a visual for you!",
-                attachments: [
-                  {
-                    media_id: message.media_id
-                  }
-                ]
-              });
-          console.log(`✅ Sent media DM to ${recipientId}: ${message.media_id}`);
-        } else if (typeof message === "string") {
+        try {
+          console.log("🌀 Processing message:", message);
+    
+          if (typeof message === "object" && message.type === "media" && message.media_id) {
+            await rwClient.v1.sendDm({
+              recipient_id: recipientId,
+              attachment: {
+                type: "media",
+                media: { id: message.media_id }
+              },
+              text: "hey" // v1 requires a non-empty string, even with attachments
+            });
+            console.log(`✅ Sent media DM to ${recipientId}: ${message.media_id}`);
+          } else if (typeof message === "string") {
           await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
           console.log(`✅ Sent text DM to ${recipientId}: ${message}`);
         } else {
