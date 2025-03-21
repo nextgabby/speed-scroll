@@ -46,21 +46,12 @@ async function sendDM(recipientId, messages) {
         }
   
         if (typeof message === "object" && message.type === "media" && message.media_id) {
-          await rwClient.v1.sendDm({
-            event: {
-              type: "message_create",
-              message_create: {
-                target: { recipient_id: recipientId },
-                message_data: {
-                  text: "hey", // Required placeholder! MUST NOT be empty
-                  attachment: {
-                    type: "media",
-                    media: { id: message.media_id }
-                  }
-                }
-              }
-            }
-          });
+            // Send media with a blank space as fallback text
+            await rwClient.v2.sendDm({
+              recipient_id: recipientId,
+              text: " ", // v2 requires text, even if just a space
+              attachments: [{ media_id: message.media_id }]
+            });
           console.log(`✅ Sent media DM to ${recipientId}: ${message.media_id}`);
         } else if (typeof message === "string") {
           await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
