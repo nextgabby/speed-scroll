@@ -12,16 +12,16 @@ app.use(express.json());
 // Load responses from JSON file
 const responses = JSON.parse(fs.readFileSync("responses.json", "utf8"));
 
-// Twitter API Client Setup (OAuth 1.0a for DMs)
+
 const twitterClient = new TwitterApi({
-  appKey: process.env.TWITTER_API_KEY,
-  appSecret: process.env.TWITTER_API_SECRET,
-  accessToken: process.env.TWITTER_ACCESS_TOKEN,
-  accessSecret: process.env.TWITTER_ACCESS_SECRET,
-});
-
-const rwClient = twitterClient.readWrite;
-
+    appKey: process.env.TWITTER_API_KEY,
+    appSecret: process.env.TWITTER_API_SECRET,
+    accessToken: process.env.TWITTER_ACCESS_TOKEN,
+    accessSecret: process.env.TWITTER_ACCESS_SECRET,
+  });
+  
+  const rwClient = twitterClient.readWrite;
+  
 
 (async () => {
     try {
@@ -51,32 +51,49 @@ async function sendDM(recipientId, messages) {
 
 // Webhook to Handle Incoming DMs
 app.post("/webhook", async (req, res) => {
-  try {
-    const event = req.body.data;
-    if (!event || !event.text || !event.sender_id) {
-      console.error("Invalid webhook request:", req.body);
-      return res.sendStatus(400);
+    const event = req.body;
+
+    console.log("Incoming Event:", JSON.stringify(event, null, 2));
+
+    // Ensure there's an event and it contains a DM event
+    if (!event || !event.direct_message_events || !event.direct_message_events.length) {
+        console.log("No valid DM event found.");
+        return res.sendStatus(400);
     }
 
-    const text = event.text.toLowerCase().trim();
-    const recipientId = event.sender_id;
+    // Extract the first DM event
+    const dmEvent = event.direct_message_events[0];
 
-    if (text === "hi" || text === "hello") {
-      await sendDM(recipientId, responses.start);
-    } else if (responses[text]) {
-      await sendDM(recipientId, responses[text]);
+    // Ensure it's a message_create event
+    if (dmEvent.type !== "message_create") {
+        console.log("Not a message_create event, ignoring.");
+        return res.sendStatus(400);
+    }
+
+    // Extract message text and sender ID
+    const senderId = dmEvent.message_create.sender_id;
+    const text = dmEvent.message_create.message_data.text.toLowerCase().trim();
+
+    console.log(`Received DM from ${senderId}: ${text}`);
+
+    // Prevent bot from responding to itself
+    if (senderId === process.env.TWITTER_USER_ID) {
+        console.log("Ignoring message from the bot itself.");
+        return res.sendStatus(200);
+    }
+
+    // Check responses.json for matching message
+    if (responses[text]) {
+        await sendDM(senderId, responses[text]);
     } else {
-      await sendDM(recipientId, [
-        "I didn’t quite catch that. Please reply with 1, 2, 3, 4, or ‘Flame Off’ to end the chat.",
-      ]);
+        await sendDM(senderId, [
+            "I didn’t quite catch that. Please reply with 1, 2, 3, 4, or ‘Flame Off’ to end the chat.",
+        ]);
     }
 
     res.sendStatus(200);
-  } catch (error) {
-    console.error("Error in webhook handler:", error);
-    res.sendStatus(500);
-  }
 });
+
 
 // CRC Challenge Response (for Twitter webhook validation)
 app.get("/webhook", (req, res) => {
