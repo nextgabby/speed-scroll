@@ -44,14 +44,12 @@ async function sendDM(recipientId, messages) {
           console.log("🌀 Processing message:", message);
     
           if (typeof message === "object" && message.type === "media" && message.media_id) {
-            await rwClient.v1.sendDm({
-              recipient_id: recipientId,
-              attachment: {
-                type: "media",
-                media: { id: message.media_id }
-              },
-              text: "hey" // v1 requires a non-empty string, even with attachments
-            });
+            await rwClient.v2.sendDmToParticipant(recipientId, {
+                attachments: [
+                  { media_id: message.media_id }
+                ],
+                text: "hey"
+              });              
             console.log(`✅ Sent media DM to ${recipientId}: ${message.media_id}`);
           } else if (typeof message === "string") {
           await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
@@ -67,7 +65,6 @@ async function sendDM(recipientId, messages) {
       }
     }
   }
-  
 
 // **Webhook to Handle Incoming DMs**
 app.post("/webhook", (req, res) => {
