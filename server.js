@@ -48,7 +48,7 @@ async function sendDM(recipientId, messages) {
               message_create: {
                 target: { recipient_id: recipientId },
                 message_data: {
-                  text: "", // can be empty, but must be present
+                  text: " ", // can be empty, but must be present
                   attachment: {
                     type: "media",
                     media: { id: message.media_id }
