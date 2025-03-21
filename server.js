@@ -35,18 +35,20 @@ const twitterClient = new TwitterApi({
 // Send DM Function (Ensures Each Message is Sent Individually)
 async function sendDM(recipientId, messages) {
     try {
-      if (!Array.isArray(messages)) messages = [messages];
+      if (!Array.isArray(messages)) {
+        messages = [messages];
+      }
   
       for (const message of messages) {
-        console.log(`✅ Sending message to ${recipientId}: ${message}`);
+        console.log(`Sending message to ${recipientId}: ${message}`);
   
         await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
   
-        // Wait 1 second before sending the next message (preventing spam)
+        // Wait 1 second before sending the next message to prevent flooding
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } catch (error) {
-      console.error("❌ Error sending DM:", error);
+      console.error("Error sending DM:", error);
     }
   }
   
@@ -54,50 +56,40 @@ async function sendDM(recipientId, messages) {
 
 // Webhook to Handle Incoming DMs
 app.post("/webhook", async (req, res) => {
-    const event = req.body;
-
-    console.log("Incoming Event:", JSON.stringify(event, null, 2));
-
-    // Ensure there's an event and it contains a DM event
-    if (!event || !event.direct_message_events || !event.direct_message_events.length) {
-        console.log("No valid DM event found.");
+    try {
+      if (!req.body || !req.body.data) {
+        console.error("Invalid request received:", req.body);
         return res.sendStatus(400);
-    }
-
-    // Extract the first DM event
-    const dmEvent = event.direct_message_events[0];
-
-    // Ensure it's a message_create event
-    if (dmEvent.type !== "message_create") {
-        console.log("Not a message_create event, ignoring.");
+      }
+  
+      const event = req.body.data;
+      const text = event.text ? event.text.toLowerCase().trim() : "";
+      const recipientId = event.sender_id;
+  
+      if (!text || !recipientId) {
+        console.error("Missing text or sender ID:", event);
         return res.sendStatus(400);
-    }
-
-    // Extract message text and sender ID
-    const senderId = dmEvent.message_create.sender_id;
-    const text = dmEvent.message_create.message_data.text.toLowerCase().trim();
-
-    console.log(`Received DM from ${senderId}: ${text}`);
-
-    // Prevent bot from responding to itself
-    if (senderId === process.env.TWITTER_USER_ID) {
-        console.log("Ignoring message from the bot itself.");
-        return res.sendStatus(200);
-    }
-
-    // Check responses.json for matching message
-    if (text === "hi" || text === "hello" || text === "hi h.e.r.b.i.e") {
+      }
+  
+      console.log(`Received DM from ${recipientId}: ${text}`);
+  
+      if (text === "hi" || text === "hello" || text === "hi h.e.r.b.i.e") {
         await sendDM(recipientId, responses.start);
       } else if (responses[text]) {
         await sendDM(recipientId, responses[text]);
       } else {
         await sendDM(recipientId, [
-          "I didn’t quite catch that. Reply with 1, 2, 3, 4, or ‘Flame Off’ to end the chat."
+          "I did not understand that. Please reply with 1, 2, 3, 4, or 'Flame Off' to end the chat."
         ]);
       }
-
-    res.sendStatus(200);
-});
+  
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Error processing webhook request:", error);
+      res.sendStatus(500);
+    }
+  });
+  
 
 
 // CRC Challenge Response (for Twitter webhook validation)
