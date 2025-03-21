@@ -4,18 +4,14 @@ const dotenv = require("dotenv");
 const fs = require("fs");
 const crypto = require("crypto");
 
-dotenv.config(); // Load environment variables
+dotenv.config();
 
 const app = express();
 app.use(express.json());
 
-// Load responses from JSON file
 const responses = JSON.parse(fs.readFileSync("responses.json", "utf8"));
+const userSessions = new Map(); // Track user conversations
 
-// Track conversations to prevent multiple responses
-const userSessions = new Map();
-
-// Twitter API Client Setup
 const twitterClient = new TwitterApi({
   appKey: process.env.TWITTER_API_KEY,
   appSecret: process.env.TWITTER_API_SECRET,
@@ -25,7 +21,6 @@ const twitterClient = new TwitterApi({
 
 const rwClient = twitterClient.readWrite;
 
-// Verify Authentication
 (async () => {
   try {
     const user = await twitterClient.v2.me();
@@ -35,7 +30,7 @@ const rwClient = twitterClient.readWrite;
   }
 })();
 
-// Send DM Function (Ensures Each Message is Sent Individually)
+// **Send DM Function** (Ensures messages are sent in order)
 async function sendDM(recipientId, messages) {
   try {
     if (!Array.isArray(messages)) messages = [messages]; // Ensure it's an array
@@ -43,14 +38,14 @@ async function sendDM(recipientId, messages) {
     for (const message of messages) {
       await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
       console.log(`✅ Sent message to ${recipientId}: ${message}`);
-      await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5 sec delay to prevent rate limit issues
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 2 sec delay between messages
     }
   } catch (error) {
     console.error("❌ Error sending DM:", error);
   }
 }
 
-// Webhook to Handle Incoming DMs
+// **Webhook to Handle Incoming DMs**
 app.post("/webhook", async (req, res) => {
   try {
     if (!req.body || !req.body.direct_message_events || req.body.direct_message_events.length === 0) {
@@ -58,7 +53,7 @@ app.post("/webhook", async (req, res) => {
       return res.sendStatus(400);
     }
 
-    const event = req.body.direct_message_events[0]; // Get the first DM event
+    const event = req.body.direct_message_events[0];
     if (!event || event.type !== "message_create") {
       console.error("Invalid message event:", event);
       return res.sendStatus(400);
@@ -74,27 +69,28 @@ app.post("/webhook", async (req, res) => {
       return res.sendStatus(400);
     }
 
-    // Prevent duplicate responses
+    // **Prevent duplicate responses**
     if (userSessions.has(senderId) && userSessions.get(senderId) === event.id) {
       console.log("Duplicate message detected. Skipping response.");
       return res.sendStatus(200);
     }
     userSessions.set(senderId, event.id);
 
-    // Handle user input
-    if (text === "hi" || text === "hello" || text === "hi h.e.r.b.i.e") {
-      await sendDM(senderId, responses.start);
+    let responseMessages = [];
+
+    // **Process user input**
+    if (["hi", "hello", "hi h.e.r.b.i.e"].includes(text)) {
+      responseMessages = responses.start;
     } else if (text === "flame off") {
-      await sendDM(senderId, responses.flameoff);
-      userSessions.delete(senderId); // Clear session
+      responseMessages = responses.flameoff;
+      userSessions.delete(senderId); // End session
     } else if (responses[text]) {
-      await sendDM(senderId, responses[text]);
+      responseMessages = responses[text];
     } else {
-      await sendDM(senderId, [
-        "I did not understand that. Please reply with 1, 2, 3, 4, or 'Flame Off' to end the chat."
-      ]);
+      responseMessages = ["I didn't understand that. Reply with 1, 2, 3, 4, or 'Flame Off' to end the chat."];
     }
 
+    await sendDM(senderId, responseMessages);
     res.sendStatus(200);
   } catch (error) {
     console.error("Error processing webhook request:", error);
@@ -102,7 +98,7 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
-// CRC Challenge Response (for Twitter webhook validation)
+// **CRC Challenge Response (for Twitter webhook validation)**
 app.get("/webhook", (req, res) => {
   const crc_token = req.query.crc_token;
 
@@ -110,7 +106,6 @@ app.get("/webhook", (req, res) => {
     return res.status(400).send("Error: crc_token missing from request");
   }
 
-  // Generate SHA-256 HMAC hash using Twitter API Secret
   const hash = crypto.createHmac("sha256", process.env.TWITTER_API_SECRET)
     .update(crc_token)
     .digest("base64");
@@ -118,9 +113,9 @@ app.get("/webhook", (req, res) => {
   res.json({ response_token: `sha256=${hash}` });
 });
 
-// Test Route to Check Server Status
+// **Test Route to Check Server Status**
 app.get("/", (req, res) => res.send("H.E.R.B.I.E. is running!"));
 
-// Start Server
+// **Start Server**
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`🚀 App listening on port: ${PORT}`));
