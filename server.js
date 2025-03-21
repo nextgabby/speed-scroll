@@ -71,8 +71,15 @@ async function sendDM(recipientId, messages) {
           await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
           console.log(`✅ Sent text to ${recipientId}: ${message}`);
         } else {
-          console.log("⚠️ Skipp
+          console.log("⚠️ Skipping unrecognized message format:", message);
+        }
   
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 sec delay
+      }
+    } catch (error) {
+      console.error("❌ Error sending DM:", error);
+    }
+  }
   
 
 // **Webhook to Handle Incoming DMs**
