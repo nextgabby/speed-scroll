@@ -46,10 +46,8 @@ async function sendDM(recipientId, messages) {
         }
   
         if (typeof message === "object" && message.type === "media" && message.media_id) {
-            // Send media with a blank space as fallback text
-            await rwClient.v2.sendDm({
-              recipient_id: recipientId,
-              text: " ", // v2 requires text, even if just a space
+            await rwClient.v2.post(`dm_conversations/with/${recipientId}/messages`, {
+              text: " ", // Required field
               attachments: [{ media_id: message.media_id }]
             });
           console.log(`✅ Sent media DM to ${recipientId}: ${message.media_id}`);
