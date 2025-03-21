@@ -51,7 +51,7 @@ async function sendDM(recipientId, messages) {
 }
 
 // **Webhook to Handle Incoming DMs**
-app.post("/webhook", async (req, res) => {
+app.post("/webhook", (req, res) => {
   try {
     const event = req.body?.direct_message_events?.[0];
 
@@ -87,8 +87,10 @@ app.post("/webhook", async (req, res) => {
       responseMessages = responses[text];
     }
 
-    // **Send response messages in order**
-    await sendDM(senderId, responseMessages);
+    // **Send response in a separate process (Prevents Heroku timeout)**
+    setImmediate(() => sendDM(senderId, responseMessages));
+
+    // **Return response to Heroku immediately**
     res.sendStatus(200);
   } catch (error) {
     console.error("Error processing webhook request:", error);
