@@ -46,19 +46,19 @@ async function sendDM(recipientId, messages) {
         }
   
         if (typeof message === "object" && message.type === "media" && message.media_id) {
-            await rwClient.v2.post(`dm_conversations/with/${recipientId}/messages`, {
-              text: " ", // Required field
-              attachments: [{ media_id: message.media_id }]
-            });
+          await rwClient.v2.post(`dm_conversations/with/${recipientId}/messages`, {
+            text: "Here's a visual for you!", // Give it a real message
+            attachments: [{ media_id: message.media_id }]
+          });
           console.log(`✅ Sent media DM to ${recipientId}: ${message.media_id}`);
         } else if (typeof message === "string") {
           await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
           console.log(`✅ Sent text DM to ${recipientId}: ${message}`);
         } else {
-          console.log("⚠️ Skipping unrecognized message:", message);
+          console.log("⚠️ Skipping unrecognized message format:", message);
         }
   
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1000)); // throttle to avoid rate limits
       }
     } catch (error) {
       console.error("❌ Error sending DM:", error);
