@@ -57,28 +57,35 @@ async function sendDM(recipientId, messages) {
 // Webhook to Handle Incoming DMs
 app.post("/webhook", async (req, res) => {
     try {
-      if (!req.body || !req.body.data) {
+      // Check if the request contains direct message events
+      if (!req.body || !req.body.direct_message_events || req.body.direct_message_events.length === 0) {
         console.error("Invalid request received:", req.body);
         return res.sendStatus(400);
       }
   
-      const event = req.body.data;
-      const text = event.text ? event.text.toLowerCase().trim() : "";
-      const recipientId = event.sender_id;
+      const event = req.body.direct_message_events[0]; // Get the first DM event
+      if (!event || event.type !== "message_create") {
+        console.error("Invalid message event:", event);
+        return res.sendStatus(400);
+      }
   
-      if (!text || !recipientId) {
+      const senderId = event.message_create.sender_id;
+      const text = event.message_create.message_data.text.trim().toLowerCase();
+  
+      console.log(`Received DM from ${senderId}: ${text}`);
+  
+      if (!text || !senderId) {
         console.error("Missing text or sender ID:", event);
         return res.sendStatus(400);
       }
   
-      console.log(`Received DM from ${recipientId}: ${text}`);
-  
+      // Handle messages based on user input
       if (text === "hi" || text === "hello" || text === "hi h.e.r.b.i.e") {
-        await sendDM(recipientId, responses.start);
+        await sendDM(senderId, responses.start);
       } else if (responses[text]) {
-        await sendDM(recipientId, responses[text]);
+        await sendDM(senderId, responses[text]);
       } else {
-        await sendDM(recipientId, [
+        await sendDM(senderId, [
           "I did not understand that. Please reply with 1, 2, 3, 4, or 'Flame Off' to end the chat."
         ]);
       }
@@ -89,6 +96,7 @@ app.post("/webhook", async (req, res) => {
       res.sendStatus(500);
     }
   });
+  
   
 
 
