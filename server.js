@@ -40,24 +40,19 @@ async function sendDM(recipientId, messages) {
       if (!Array.isArray(messages)) messages = [messages];
   
       for (const message of messages) {
-        if (!message || (typeof message === "string" && message.trim() === "")) {
-          console.log("⚠️ Skipping empty string message.");
+        if (!message) {
+          console.log("⚠️ Skipping null/undefined message.");
           continue;
         }
   
-        if (
-          typeof message === "object" &&
-          message.type === "media" &&
-          message.media_id
-        ) {
-          // Media message must have a placeholder text (required by Twitter)
+        if (typeof message === "object" && message.type === "media" && message.media_id) {
           await rwClient.v1.sendDm({
             event: {
               type: "message_create",
               message_create: {
                 target: { recipient_id: recipientId },
                 message_data: {
-                  text: "media", // Placeholder text, required even if not shown
+                  text: " ", // Required placeholder! MUST NOT be empty
                   attachment: {
                     type: "media",
                     media: { id: message.media_id }
@@ -66,20 +61,21 @@ async function sendDM(recipientId, messages) {
               }
             }
           });
-          console.log(`✅ Sent media to ${recipientId}: ${message.media_id}`);
+          console.log(`✅ Sent media DM to ${recipientId}: ${message.media_id}`);
         } else if (typeof message === "string") {
           await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
-          console.log(`✅ Sent text to ${recipientId}: ${message}`);
+          console.log(`✅ Sent text DM to ${recipientId}: ${message}`);
         } else {
-          console.log("⚠️ Skipping unrecognized message format:", message);
+          console.log("⚠️ Skipping unrecognized message:", message);
         }
   
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 sec delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } catch (error) {
       console.error("❌ Error sending DM:", error);
     }
   }
+  
   
 
 // **Webhook to Handle Incoming DMs**
