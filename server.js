@@ -46,10 +46,14 @@ async function sendDM(recipientId, messages) {
           message.type === "media" &&
           message.media_id
         ) {
-          await rwClient.v2.post(`dm_conversations/with/${recipientId}/messages`, {
-            text: "Here's a visual for you!",
-            attachments: [{ media_id: message.media_id }]
-          });
+            await rwClient.v2.post(`dm_conversations/with/${recipientId}/messages`, {
+                text: "Here's a visual for you!",
+                attachments: [
+                  {
+                    media_id: message.media_id
+                  }
+                ]
+              });
           console.log(`✅ Sent media DM to ${recipientId}: ${message.media_id}`);
         } else if (typeof message === "string") {
           await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
