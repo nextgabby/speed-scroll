@@ -20,6 +20,9 @@ const twitterClient = new TwitterApi({
 
 const rwClient = twitterClient.readWrite;
 
+// Track last processed message to prevent duplicates
+let lastProcessedMessageId = null;
+
 // Authenticate
 (async () => {
   try {
@@ -30,7 +33,7 @@ const rwClient = twitterClient.readWrite;
   }
 })();
 
-// **Send DM Function (Ensures Ordered Messages with Delay)**
+// **Send DM Function**
 async function sendDM(recipientId, messages) {
   if (!Array.isArray(messages)) messages = [messages];
 
@@ -56,15 +59,23 @@ app.post("/webhook", async (req, res) => {
     }
 
     const senderId = event.message_create.sender_id;
+    const messageId = event.id;
     const text = event.message_create.message_data.text.trim().toLowerCase();
 
     console.log(`Received DM from ${senderId}: ${text}`);
 
+    // Prevent duplicate processing
+    if (messageId === lastProcessedMessageId) {
+      console.log("🚨 Duplicate message detected. Skipping.");
+      return res.sendStatus(200);
+    }
+    lastProcessedMessageId = messageId; // Update last processed message
+
+    // **Determine Response**
     let responseMessages = [
       "I didn’t understand that. Reply with 1, 2, 3, 4, or 'Flame Off' to end the chat."
     ];
 
-    // **Check for Start Messages**
     if (text === "hi" || text === "hello" || text === "hi h.e.r.b.i.e") {
       responseMessages = responses.start;
     } else if (text === "flame off") {
