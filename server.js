@@ -43,10 +43,18 @@ async function sendDM(recipientId, messages) {
       for (const message of messages) {
         if (typeof message === "object" && message.type === "media" && message.media_id) {
           await rwClient.v1.sendDm({
-            recipient_id: recipientId,
-            attachment: {
-              type: "media",
-              media: { id: message.media_id }
+            event: {
+              type: "message_create",
+              message_create: {
+                target: { recipient_id: recipientId },
+                message_data: {
+                  text: "", // can be empty, but must be present
+                  attachment: {
+                    type: "media",
+                    media: { id: message.media_id }
+                  }
+                }
+              }
             }
           });
         } else if (typeof message === "string") {
@@ -60,6 +68,7 @@ async function sendDM(recipientId, messages) {
       console.error("❌ Error sending DM:", error);
     }
   }
+  
   
 
 // **Webhook to Handle Incoming DMs**
