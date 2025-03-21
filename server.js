@@ -35,19 +35,19 @@ const lastMessageByUser = {}; // Store last message ID per user
   }
 })();
 
+// **Send DM Function (One Message at a Time)**
 async function sendDM(recipientId, messages) {
-    try {
-      if (!Array.isArray(messages)) messages = [messages];
+    if (!Array.isArray(messages)) messages = [messages];
   
-      for (const message of messages) {
-        if (!message) {
-          console.log("⚠️ Skipping null/undefined message.");
-          continue;
-        }
-  
-        if (typeof message === "object" && message.type === "media" && message.media_id) {
+    for (const message of messages) {
+      try {
+        if (
+          typeof message === "object" &&
+          message.type === "media" &&
+          message.media_id
+        ) {
           await rwClient.v2.post(`dm_conversations/with/${recipientId}/messages`, {
-            text: "Here's a visual for you!", // Give it a real message
+            text: "Here's a visual for you!",
             attachments: [{ media_id: message.media_id }]
           });
           console.log(`✅ Sent media DM to ${recipientId}: ${message.media_id}`);
@@ -55,16 +55,16 @@ async function sendDM(recipientId, messages) {
           await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
           console.log(`✅ Sent text DM to ${recipientId}: ${message}`);
         } else {
-          console.log("⚠️ Skipping unrecognized message format:", message);
+          console.warn("⚠️ Unrecognized message format, skipping:", message);
         }
   
-        await new Promise(resolve => setTimeout(resolve, 1000)); // throttle to avoid rate limits
+        // Delay between messages to preserve order and avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (error) {
+        console.error("❌ DM Error:", error);
       }
-    } catch (error) {
-      console.error("❌ Error sending DM:", error);
     }
   }
-  
   
 
 // **Webhook to Handle Incoming DMs**
