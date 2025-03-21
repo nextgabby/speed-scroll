@@ -35,29 +35,22 @@ const twitterClient = new TwitterApi({
 // Send DM Function (Ensures Each Message is Sent Individually)
 async function sendDM(recipientId, messages) {
     try {
-      if (!Array.isArray(messages)) {
-        messages = [messages];
-      }
+      if (!Array.isArray(messages)) messages = [messages]; // Ensure it's an array
   
       for (const message of messages) {
-        console.log(`Sending message to ${recipientId}: ${message}`);
-  
         await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
-  
-        // Wait 1 second before sending the next message to prevent flooding
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log(`✅ Sent message to ${recipientId}: ${message}`);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 sec delay to prevent rate limit issues
       }
     } catch (error) {
-      console.error("Error sending DM:", error);
+      console.error("❌ Error sending DM:", error);
     }
   }
   
-  
+   
 
-// Webhook to Handle Incoming DMs
-app.post("/webhook", async (req, res) => {
+  app.post("/webhook", async (req, res) => {
     try {
-      // Check if the request contains direct message events
       if (!req.body || !req.body.direct_message_events || req.body.direct_message_events.length === 0) {
         console.error("Invalid request received:", req.body);
         return res.sendStatus(400);
@@ -79,7 +72,14 @@ app.post("/webhook", async (req, res) => {
         return res.sendStatus(400);
       }
   
-      // Handle messages based on user input
+      // Prevent responding multiple times for the same message
+      if (req.session && req.session.lastMessageId === event.id) {
+        console.log("Duplicate message detected. Skipping response.");
+        return res.sendStatus(200);
+      }
+      req.session = { lastMessageId: event.id }; // Store last message ID
+  
+      // Handle user input
       if (text === "hi" || text === "hello" || text === "hi h.e.r.b.i.e") {
         await sendDM(senderId, responses.start);
       } else if (responses[text]) {
@@ -97,8 +97,6 @@ app.post("/webhook", async (req, res) => {
     }
   });
   
-  
-
 
 // CRC Challenge Response (for Twitter webhook validation)
 app.get("/webhook", (req, res) => {
