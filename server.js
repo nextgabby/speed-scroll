@@ -37,21 +37,19 @@ async function sendDM(recipientId, messages) {
     try {
       if (!Array.isArray(messages)) messages = [messages];
   
-      // Send messages one at a time, stopping after the last one
       for (const message of messages) {
         console.log(`✅ Sending message to ${recipientId}: ${message}`);
+  
         await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
-        
-        // Wait a bit to prevent API limits (optional)
+  
+        // Wait 1 second before sending the next message (preventing spam)
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Break after sending a single response to avoid duplicates
-        break;
       }
     } catch (error) {
-      console.error("Error sending DM:", error);
+      console.error("❌ Error sending DM:", error);
     }
   }
+  
   
 
 // Webhook to Handle Incoming DMs
@@ -88,13 +86,15 @@ app.post("/webhook", async (req, res) => {
     }
 
     // Check responses.json for matching message
-    if (responses[text]) {
-        await sendDM(senderId, responses[text]);
-    } else {
-        await sendDM(senderId, [
-            "I didn’t quite catch that. Please reply with 1, 2, 3, 4, or ‘Flame Off’ to end the chat.",
+    if (text === "hi" || text === "hello" || text === "hi h.e.r.b.i.e") {
+        await sendDM(recipientId, responses.start);
+      } else if (responses[text]) {
+        await sendDM(recipientId, responses[text]);
+      } else {
+        await sendDM(recipientId, [
+          "I didn’t quite catch that. Reply with 1, 2, 3, 4, or ‘Flame Off’ to end the chat."
         ]);
-    }
+      }
 
     res.sendStatus(200);
 });
