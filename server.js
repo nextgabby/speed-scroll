@@ -41,6 +41,11 @@ async function sendDM(recipientId, messages) {
       if (!Array.isArray(messages)) messages = [messages];
   
       for (const message of messages) {
+        if (!message || (typeof message === "string" && message.trim() === "")) {
+          console.log("⚠️ Skipping empty message");
+          continue;
+        }
+  
         if (typeof message === "object" && message.type === "media" && message.media_id) {
           await rwClient.v1.sendDm({
             event: {
@@ -48,7 +53,7 @@ async function sendDM(recipientId, messages) {
               message_create: {
                 target: { recipient_id: recipientId },
                 message_data: {
-                  text: " ", // can be empty, but must be present
+                  text: " ", // required even for media-only messages
                   attachment: {
                     type: "media",
                     media: { id: message.media_id }
@@ -68,6 +73,7 @@ async function sendDM(recipientId, messages) {
       console.error("❌ Error sending DM:", error);
     }
   }
+  
   
   
 
