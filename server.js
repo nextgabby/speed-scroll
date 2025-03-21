@@ -37,18 +37,30 @@ const lastMessageByUser = {}; // Store last message ID per user
 
 // **Send DM Function (One Message at a Time)**
 async function sendDM(recipientId, messages) {
-  if (!Array.isArray(messages)) messages = [messages];
-
-  for (const message of messages) {
     try {
-      await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
-      console.log(`✅ Sent to ${recipientId}: ${message}`);
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Delay for order
+      if (!Array.isArray(messages)) messages = [messages];
+  
+      for (const message of messages) {
+        if (typeof message === "object" && message.type === "media" && message.media_id) {
+          await rwClient.v1.sendDm({
+            recipient_id: recipientId,
+            attachment: {
+              type: "media",
+              media: { id: message.media_id }
+            }
+          });
+        } else if (typeof message === "string") {
+          await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
+        }
+  
+        console.log(`✅ Sent to ${recipientId}:`, message);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 sec delay
+      }
     } catch (error) {
-      console.error("❌ DM Error:", error);
+      console.error("❌ Error sending DM:", error);
     }
   }
-}
+  
 
 // **Webhook to Handle Incoming DMs**
 app.post("/webhook", (req, res) => {
