@@ -9,6 +9,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
+// Load responses from JSON file
 const responses = JSON.parse(fs.readFileSync("responses.json", "utf8"));
 
 const twitterClient = new TwitterApi({
@@ -20,20 +21,20 @@ const twitterClient = new TwitterApi({
 
 const rwClient = twitterClient.readWrite;
 
-// Track last processed message to prevent duplicates
-let lastProcessedMessageId = null;
+// Store bot user ID (prevents responding to itself)
+let botUserId = null;
 
-// Authenticate
 (async () => {
   try {
     const user = await twitterClient.v2.me();
-    console.log("✅ Authenticated as:", user);
+    botUserId = user.data.id;
+    console.log("✅ Bot running as:", user.data.username);
   } catch (error) {
     console.error("Twitter API Authentication Error:", error);
   }
 })();
 
-// **Send DM Function**
+// **Send DM Function (One Message at a Time)**
 async function sendDM(recipientId, messages) {
   if (!Array.isArray(messages)) messages = [messages];
 
@@ -41,7 +42,7 @@ async function sendDM(recipientId, messages) {
     try {
       await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
       console.log(`✅ Sent to ${recipientId}: ${message}`);
-      await new Promise(resolve => setTimeout(resolve, 2000)); // 2 sec delay
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Delay for order
     } catch (error) {
       console.error("❌ DM Error:", error);
     }
@@ -53,28 +54,22 @@ app.post("/webhook", async (req, res) => {
   try {
     const event = req.body?.direct_message_events?.[0];
 
-    if (!event || event.type !== "message_create") {
-      console.error("Invalid message event:", event);
-      return res.sendStatus(400);
-    }
+    if (!event || event.type !== "message_create") return res.sendStatus(400);
 
     const senderId = event.message_create.sender_id;
     const messageId = event.id;
     const text = event.message_create.message_data.text.trim().toLowerCase();
 
-    console.log(`Received DM from ${senderId}: ${text}`);
+    console.log(`📩 Received from ${senderId}: ${text}`);
 
-    // Prevent duplicate processing
-    if (messageId === lastProcessedMessageId) {
-      console.log("🚨 Duplicate message detected. Skipping.");
+    // **Ignore messages from the bot itself**
+    if (senderId === botUserId) {
+      console.log("Ignoring bot's own message.");
       return res.sendStatus(200);
     }
-    lastProcessedMessageId = messageId; // Update last processed message
 
     // **Determine Response**
-    let responseMessages = [
-      "I didn’t understand that. Reply with 1, 2, 3, 4, or 'Flame Off' to end the chat."
-    ];
+    let responseMessages = ["I didn’t understand that. Reply with 1, 2, 3, 4, or 'Flame Off' to end the chat."];
 
     if (text === "hi" || text === "hello" || text === "hi h.e.r.b.i.e") {
       responseMessages = responses.start;
@@ -84,6 +79,7 @@ app.post("/webhook", async (req, res) => {
       responseMessages = responses[text];
     }
 
+    // **Send response messages in order**
     await sendDM(senderId, responseMessages);
     res.sendStatus(200);
   } catch (error) {
