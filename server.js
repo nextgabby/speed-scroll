@@ -37,14 +37,19 @@ async function sendDM(recipientId, messages) {
     try {
       if (!Array.isArray(messages)) messages = [messages];
   
+      // Send messages one at a time, stopping after the last one
       for (const message of messages) {
-        const response = await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
-        console.log(`Sent message to ${recipientId}:`, response);
-        await new Promise(resolve => setTimeout(resolve, 1000)); 
+        console.log(`✅ Sending message to ${recipientId}: ${message}`);
+        await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
+        
+        // Wait a bit to prevent API limits (optional)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Break after sending a single response to avoid duplicates
+        break;
       }
     } catch (error) {
       console.error("Error sending DM:", error);
-      console.error("Twitter API Response:", JSON.stringify(error.data, null, 2));
     }
   }
   
