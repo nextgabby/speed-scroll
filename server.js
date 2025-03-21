@@ -35,25 +35,29 @@ const lastMessageByUser = {}; // Store last message ID per user
   }
 })();
 
-// **Send DM Function (One Message at a Time)**
 async function sendDM(recipientId, messages) {
     try {
       if (!Array.isArray(messages)) messages = [messages];
   
       for (const message of messages) {
         if (!message || (typeof message === "string" && message.trim() === "")) {
-          console.log("⚠️ Skipping empty message");
+          console.log("⚠️ Skipping empty string message.");
           continue;
         }
   
-        if (typeof message === "object" && message.type === "media" && message.media_id) {
+        if (
+          typeof message === "object" &&
+          message.type === "media" &&
+          message.media_id
+        ) {
+          // Media message must have a placeholder text (required by Twitter)
           await rwClient.v1.sendDm({
             event: {
               type: "message_create",
               message_create: {
                 target: { recipient_id: recipientId },
                 message_data: {
-                  text: " ", // required even for media-only messages
+                  text: "media", // Placeholder text, required even if not shown
                   attachment: {
                     type: "media",
                     media: { id: message.media_id }
@@ -62,18 +66,12 @@ async function sendDM(recipientId, messages) {
               }
             }
           });
+          console.log(`✅ Sent media to ${recipientId}: ${message.media_id}`);
         } else if (typeof message === "string") {
           await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
-        }
-  
-        console.log(`✅ Sent to ${recipientId}:`, message);
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 sec delay
-      }
-    } catch (error) {
-      console.error("❌ Error sending DM:", error);
-    }
-  }
-  
+          console.log(`✅ Sent text to ${recipientId}: ${message}`);
+        } else {
+          console.log("⚠️ Skipp
   
   
 
