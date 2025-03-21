@@ -52,7 +52,7 @@ async function sendDM(recipientId, messages) {
               message_create: {
                 target: { recipient_id: recipientId },
                 message_data: {
-                  text: " ", // Required placeholder! MUST NOT be empty
+                  text: "hey", // Required placeholder! MUST NOT be empty
                   attachment: {
                     type: "media",
                     media: { id: message.media_id }
