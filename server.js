@@ -48,7 +48,7 @@ async function sendDM(recipientId, messages) {
                 attachments: [
                   { media_id: message.media_id }
                 ],
-                text: "hey"
+                text: " "
               });              
             console.log(`✅ Sent media DM to ${recipientId}: ${message.media_id}`);
           } else if (typeof message === "string") {
