@@ -40,31 +40,35 @@ async function sendDM(recipientId, messages) {
     if (!Array.isArray(messages)) messages = [messages];
   
     for (const message of messages) {
-        try {
-          console.log("🌀 Processing message:", message);
-    
-          if (typeof message === "object" && message.type === "media" && message.media_id) {
-            await rwClient.v2.sendDmToParticipant(recipientId, {
-                attachments: [
-                  { media_id: message.media_id }
-                ],
-                text: " "
-              });              
-            console.log(`✅ Sent media DM to ${recipientId}: ${message.media_id}`);
-          } else if (typeof message === "string") {
-          await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
+      try {
+        console.log("🌀 Processing message:", message);
+  
+        if (typeof message === "object" && message.type === "media" && message.media_id) {
+          const response = await rwClient.v2.sendDmToParticipant(recipientId, {
+            attachments: [{ media_id: message.media_id }],
+            text: " " // Required field
+          });
+  
+          console.log(`✅ Sent media DM to ${recipientId}: ${message.media_id}`);
+          console.log("📦 Response:", response.data || response);
+        } else if (typeof message === "string") {
+          const response = await rwClient.v2.sendDmToParticipant(recipientId, { text: message });
           console.log(`✅ Sent text DM to ${recipientId}: ${message}`);
         } else {
           console.warn("⚠️ Unrecognized message format, skipping:", message);
         }
   
-        // Delay between messages to preserve order and avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (error) {
-        console.error("❌ DM Error:", error);
+        console.error("❌ DM Error:", {
+          status: error.code,
+          data: error.data,
+          message: error.message,
+        });
       }
     }
   }
+  
 
 // **Webhook to Handle Incoming DMs**
 app.post("/webhook", (req, res) => {
