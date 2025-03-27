@@ -118,7 +118,6 @@ app.post("/webhook", (req, res) => {
   }
 });
 
-// **CRC Challenge Response (for Twitter validation)**
 app.get("/webhook", (req, res) => {
   const crc_token = req.query.crc_token;
   if (!crc_token) return res.status(400).send("Error: crc_token missing");
@@ -130,9 +129,8 @@ app.get("/webhook", (req, res) => {
   res.json({ response_token: `sha256=${hash}` });
 });
 
-// **Test Route**
+
 app.get("/", (req, res) => res.send("H.E.R.B.I.E. is running!"));
 
-// **Start Server**
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`🚀 App listening on port: ${PORT}`));
+app.listen(PORT, () => console.log(`App listening on port: ${PORT}`));
