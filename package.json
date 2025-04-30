@@ -10,5 +10,15 @@
     "express": "^4.18.2",
     "dotenv": "^16.0.3",
     "twitter-api-v2": "^1.14.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nextgabby/speed-scroll.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nextgabby/speed-scroll/issues"
+  },
+  "homepage": "https://github.com/nextgabby/speed-scroll#readme"
 }
