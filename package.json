@@ -1,5 +1,5 @@
 {
-  "name": "dm-bot",
+  "name": "speed-scroll",
   "version": "1.0.0",
   "description": "Twitter DM bot using Twitter API v2",
   "main": "server.js",
