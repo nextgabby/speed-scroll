@@ -15,8 +15,8 @@ const client = new TwitterApi({
 });
 
 const userLikeTimestamps = new Map();
-const TWEET_1 = '1917663283827425376';
-const TWEET_2 = '1917670930798579740';
+const TWEET_1 = '1918403811762479591';
+const TWEET_2 = '1918403839826567376';
 
 app.get('/webhook', (req, res) => {
   const crcToken = req.query.crc_token;
