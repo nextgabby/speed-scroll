@@ -15,8 +15,8 @@ const client = new TwitterApi({
 });
 
 const userLikeTimestamps = new Map();
-const TWEET_1 = '1918403811762479591';
-const TWEET_2 = '1918403839826567376';
+const TWEET_1 = '1919413840577454214';
+const TWEET_2 = '1919421502375563594';
 
 app.get('/webhook', (req, res) => {
   const crcToken = req.query.crc_token;
@@ -40,11 +40,12 @@ app.post('/webhook', async (req, res) => {
         if (likedTweetId === TWEET_1) {
           userLikeTimestamps.set(userId, Date.now());
         } else if (likedTweetId === TWEET_2 && userLikeTimestamps.has(userId)) {
-          const timeTaken = Math.floor((Date.now() - userLikeTimestamps.get(userId)) / 1000);
-          const message = `@${username} wow it took you ${timeTaken} seconds`;
+          const timeTakenMs = Date.now() - userLikeTimestamps.get(userId);
+          const timeTakenSec = (timeTakenMs / 1000).toFixed(2);
+          const message = `@${username} Well done — you completed the race in just ${timeTakenSec} seconds. In that time, an F1 driver can cover miles at peak performance.`;
           await client.v2.tweet(message);
           userLikeTimestamps.delete(userId);
-        }
+        }        
       }
     }
 
