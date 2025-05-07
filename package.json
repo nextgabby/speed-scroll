@@ -8,8 +8,10 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "axios": "^1.9.0",
     "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "oauth-1.0a": "^2.2.6",
     "twitter-api-v2": "^1.14.0"
   },
   "engines": {
