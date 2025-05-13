@@ -16,7 +16,6 @@ const client = new TwitterApi({
   accessSecret: process.env.TWITTER_ACCESS_SECRET,
 });
 
-// Setup OAuth 1.0a for manual nullcast request
 const oauth = OAuth({
   consumer: {
     key: process.env.TWITTER_API_KEY,
